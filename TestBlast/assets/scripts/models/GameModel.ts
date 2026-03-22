@@ -1,6 +1,8 @@
+import { GameState } from "../common/enums/GameState";
+
 export class GameModel {
-    width: number;
-    height: number;
+    score: number;
+    state: GameState;
 
     public constructor(init?:Partial<GameModel>) {
         Object.assign(this, init);

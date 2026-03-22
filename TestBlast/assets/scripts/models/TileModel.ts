@@ -1,4 +1,4 @@
-import { Vec2 } from "cc";
+import { Vec2, Node } from "cc";
 import { TileColor } from "../common/enums/TileColor";
 
 export class TileModel {
