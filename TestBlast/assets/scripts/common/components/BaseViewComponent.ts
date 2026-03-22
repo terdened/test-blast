@@ -7,8 +7,8 @@ export abstract  class BaseViewComponent<T> extends Component {
 
     init(model: T) {
         this.model = model;
-        this.render();
+        this.dirty();
     }
 
-    abstract render();
+    abstract dirty();
 }

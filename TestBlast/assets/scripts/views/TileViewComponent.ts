@@ -10,18 +10,36 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
     @property([SpriteFrame])
     frames: SpriteFrame[] = [];
 
-    private _transitionFinished: boolean = true;
+    private _movementFinished: boolean = true;
     private _targetPosition: Vec3;
-    private _moveTime: number;
+    private _moveTime: number = 0;
     private _moveDuration: number = 2;
+
+    protected onEnable(): void {
+        this._registerNodeEvent();
+    }
+
+    protected onDisable(): void {
+        this._unregisterNodeEvent();
+    }
 
     protected start(): void {
     }
 
-    protected onEnable(): void {
+    protected update(dt: number): void {
+        this.handlePosition(dt);
+    }
+
+    protected _registerNodeEvent() {
         this.node.on(NodeEventType.MOUSE_ENTER, this._onMouseMoveIn, this);
         this.node.on(NodeEventType.MOUSE_LEAVE, this._onMouseMoveOut, this);
         this.node.on(NodeEventType.MOUSE_DOWN, this._onMouseDown, this);
+    }
+
+    protected _unregisterNodeEvent() {
+        this.node.off(NodeEventType.MOUSE_ENTER, this._onMouseMoveIn, this);
+        this.node.off(NodeEventType.MOUSE_LEAVE, this._onMouseMoveOut, this);
+        this.node.off(NodeEventType.MOUSE_DOWN, this._onMouseDown, this);
     }
 
     protected _onMouseMoveIn (event?: EventMouse): void {
@@ -46,10 +64,9 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
         this.node.setPosition(newPosition);
     }
 
-    render() {
-        this.dirty();
-
-        this._transitionFinished = false;
+    dirty() {
+        this._targetPosition = this.calculateTargetPosition();
+        this._movementFinished = false;
         this._moveTime = 0;
         this._moveDuration = randomRange(1.5, 2);
 
@@ -57,27 +74,12 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
         spriteComponent.spriteFrame = this.frames[this.model.color];
     }
 
-    protected update(dt: number): void {
-        this.handlePosition(dt);
-    }
-
-    dirty() {
-        this._targetPosition = this.calculateTargetPosition();
-        this._transitionFinished = false;
-        this._moveTime = 0;
-        this._moveDuration = randomRange(1.5, 2);
-    }
-
     calculateTargetPosition(): Vec3 {
         return new Vec3(this.model.position.x * 100, this.model.position.y * 100, 0);
     }
 
     private handlePosition(dt: number): void {
-        if (this._transitionFinished) {
-            if(this._targetPosition != this.calculateTargetPosition()) {
-                this.dirty();
-            }
-
+        if (this._movementFinished) {
             return;
         }
 
@@ -97,7 +99,7 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
         
         if (Vec3.distance(newPosition, this._targetPosition) < 1) {
             newPosition = this._targetPosition;
-            this._transitionFinished = true;
+            this._movementFinished = true;
         }
 
         this.node.setPosition(newPosition);

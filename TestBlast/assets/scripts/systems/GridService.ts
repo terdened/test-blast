@@ -1,50 +1,34 @@
-import { _decorator, Component, instantiate, Node, Prefab, randomRangeInt, Vec2 } from 'cc';
+import { _decorator, EventTarget, randomRangeInt, Vec2 } from 'cc';
 import { GridModel } from '../models/GridModel';
-import { TileViewComponent } from '../views/TileViewComponent';
 import { TileModel } from '../models/TileModel';
 import { TileColor } from '../common/enums/TileColor';
-import { GridViewComponent } from '../views/GridViewComponent';
-const { ccclass, property } = _decorator;
 
-@ccclass('GridSystemComponent')
-export class GridSystemComponent extends Component {
-    @property({type: Node})
-    background: Node;
-
-    @property({type: Prefab})
-    tilePrefab: Prefab;
-
-    model: GridModel;
-
-    _viewMap: Map<TileModel, Node> = new Map<TileModel, Node>();
-
-    start() {
-        this.init(4, 6);
-    }
+export class GridService {
+    grid: GridModel;
+    eventTarget: EventTarget = new EventTarget();
 
     init(width: number, height: number) {
-        this.model = new GridModel({
+        this.grid = new GridModel({
             width: width,
             height: height,
             tiles: []
         });
 
         this.createTiles();
-        this.createBackground();
     }
 
     createTiles() {
-        for (var y = 0; y < this.model.height; y++)
+        for (var y = 0; y < this.grid.height; y++)
         {
             let row: TileModel[] = [];
             
-            for (var x = 0; x < this.model.width; x++)
+            for (var x = 0; x < this.grid.width; x++)
             {
                 const tile = this.createTile(x, y);
                 row.push(tile);
             }
 
-            this.model.tiles.push(row);
+            this.grid.tiles.push(row);
         }
     }
 
@@ -54,15 +38,8 @@ export class GridSystemComponent extends Component {
             color: randomRangeInt(0, 5) as TileColor
         });
 
-        const tileNode = instantiate(this.tilePrefab);
-        this.background.addChild(tileNode);
-        
-        let viewComponent = tileNode.getComponent(TileViewComponent);
-        viewComponent.init(tile);
+        this.eventTarget.emit('TileCreated', tile);
 
-        viewComponent.events.on('click', this.handleClick, this);
-
-        this._viewMap.set(tile, tileNode);
         return tile;
     }
 
@@ -80,11 +57,11 @@ export class GridSystemComponent extends Component {
     }
 
     applyGravity() {
-        for (let x = 0; x < this.model.width; x++) {
+        for (let x = 0; x < this.grid.width; x++) {
             let emptyY = 0;
 
-            for (let y = 0; y < this.model.height; y++) {
-                const tile = this.model.tiles[y][x];
+            for (let y = 0; y < this.grid.height; y++) {
+                const tile = this.grid.tiles[y][x];
 
                 if (tile !== undefined) {
                     if (y !== emptyY) {
@@ -98,15 +75,17 @@ export class GridSystemComponent extends Component {
     }
 
     moveTile(tile: TileModel, x: number, y: number) {
-        this.model.tiles[y][x] = tile;
-        this.model.tiles[tile.position.y][tile.position.x] = undefined;
+        this.grid.tiles[y][x] = tile;
+        this.grid.tiles[tile.position.y][tile.position.x] = undefined;
 
         tile.position.x = x;
         tile.position.y = y;
+
+        this.eventTarget.emit('TileUpdated', tile);
     }
 
     removeTileAtPosition(x: number, y: number) {
-        const tile = this.model.tiles[y][x];
+        const tile = this.grid.tiles[y][x];
         this.removeTile(tile);
     }
 
@@ -115,29 +94,20 @@ export class GridSystemComponent extends Component {
             return;
         }
 
-        const tileView = this._viewMap.get(tile);
-        tileView.destroy();
-
-        this._viewMap.delete(tile);
-        this.model.tiles[tile.position.y][tile.position.x] = undefined;
+        this.grid.tiles[tile.position.y][tile.position.x] = undefined;
+        this.eventTarget.emit('TileRemoved', tile);
     }
 
     spawnNewTiles() {
-        for (let x = 0; x < this.model.width; x++) {
-            for (let y = 0; y < this.model.height; y++) {
-                if (this.model.tiles[y][x] == null) {
+        for (let x = 0; x < this.grid.width; x++) {
+            for (let y = 0; y < this.grid.height; y++) {
+                if (this.grid.tiles[y][x] == null) {
                     const tileModel = this.createTile(x, y);
-                    this.model.tiles[y][x] = tileModel;
+                    this.grid.tiles[y][x] = tileModel;
                 }
             }
         }
     }
-
-    createBackground() {
-        let viewComponent = this.background.getComponent(GridViewComponent);
-        viewComponent.init(this.model);
-    }
-
 
     getNeighbors(tile: TileModel): TileModel[] {
         const dirs = [
@@ -153,8 +123,8 @@ export class GridSystemComponent extends Component {
             const nx = tile.position.x + d.x;
             const ny = tile.position.y + d.y;
 
-            if (this.model.tiles[ny] && this.model.tiles[ny][nx]) {
-                result.push(this.model.tiles[ny][nx]);
+            if (this.grid.tiles[ny] && this.grid.tiles[ny][nx]) {
+                result.push(this.grid.tiles[ny][nx]);
             }
         }
 

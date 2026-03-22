@@ -11,7 +11,7 @@ export class GridViewComponent extends BaseViewComponent<GridModel> {
 
     }
 
-    render() {
+    dirty() {
         const xPos = -this.model.width * this.tileSize / 2;
         const yPos = -this.model.height * this.tileSize / 2;
 
