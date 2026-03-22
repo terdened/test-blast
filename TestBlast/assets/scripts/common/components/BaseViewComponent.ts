@@ -5,10 +5,10 @@ const { ccclass, property } = _decorator;
 export abstract  class BaseViewComponent<T> extends Component {
     model: T;
 
-    init(model: T) {
+    init(model: T): void {
         this.model = model;
         this.dirty();
     }
 
-    abstract dirty();
+    abstract dirty(): void;
 }

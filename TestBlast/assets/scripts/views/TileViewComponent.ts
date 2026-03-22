@@ -1,4 +1,4 @@
-import { _decorator, ButtonComponent, Color, EventMouse, Input, lerp, NodeEventType, randomRange, SpriteComponent, SpriteFrame, Vec3, EventTarget } from 'cc';
+import { _decorator, Color, EventMouse, NodeEventType, randomRange, SpriteComponent, SpriteFrame, Vec3, EventTarget } from 'cc';
 import { TileModel } from '../models/TileModel';
 import { BaseViewComponent } from '../common/components/BaseViewComponent';
 const { ccclass, property } = _decorator;
@@ -14,6 +14,7 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
     private _targetPosition: Vec3;
     private _moveTime: number = 0;
     private _moveDuration: number = 2;
+    private _tileSize: number = 100;
 
     protected onEnable(): void {
         this._registerNodeEvent();
@@ -24,19 +25,22 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
     }
 
     protected start(): void {
+        let newPosition = new Vec3();
+        Vec3.add(newPosition, this._targetPosition, new Vec3(0, this._tileSize * 2, 0));
+        this.node.setPosition(newPosition);
     }
 
     protected update(dt: number): void {
         this.handlePosition(dt);
     }
 
-    protected _registerNodeEvent() {
+    protected _registerNodeEvent(): void {
         this.node.on(NodeEventType.MOUSE_ENTER, this._onMouseMoveIn, this);
         this.node.on(NodeEventType.MOUSE_LEAVE, this._onMouseMoveOut, this);
         this.node.on(NodeEventType.MOUSE_DOWN, this._onMouseDown, this);
     }
 
-    protected _unregisterNodeEvent() {
+    protected _unregisterNodeEvent(): void {
         this.node.off(NodeEventType.MOUSE_ENTER, this._onMouseMoveIn, this);
         this.node.off(NodeEventType.MOUSE_LEAVE, this._onMouseMoveOut, this);
         this.node.off(NodeEventType.MOUSE_DOWN, this._onMouseDown, this);
@@ -56,15 +60,7 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
         this.events.emit('click', this.model);
     }
 
-    override init(model: TileModel): void {
-        super.init(model);
-
-        let newPosition = new Vec3();
-        Vec3.add(newPosition, this._targetPosition, new Vec3(0, 200, 0));
-        this.node.setPosition(newPosition);
-    }
-
-    dirty() {
+    public dirty(): void {
         this._targetPosition = this.calculateTargetPosition();
         this._movementFinished = false;
         this._moveTime = 0;
@@ -74,16 +70,14 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
         spriteComponent.spriteFrame = this.frames[this.model.color];
     }
 
-    calculateTargetPosition(): Vec3 {
-        return new Vec3(this.model.position.x * 100, this.model.position.y * 100, 0);
+    private calculateTargetPosition(): Vec3 {
+        return new Vec3(this.model.position.x * this._tileSize, this.model.position.y * this._tileSize, 0);
     }
 
     private handlePosition(dt: number): void {
         if (this._movementFinished) {
             return;
         }
-
-        let newPosition = new Vec3();
 
         this._moveTime += dt;
         let ratio = 1.0;
@@ -95,6 +89,7 @@ export class TileViewComponent extends BaseViewComponent<TileModel> {
             ratio = 1;
         }
 
+        let newPosition = new Vec3();
         Vec3.lerp(newPosition, this.node.getPosition(), this._targetPosition, ratio);
         
         if (Vec3.distance(newPosition, this._targetPosition) < 1) {

@@ -17,8 +17,14 @@ export class GridControllerComponent extends Component {
 
     _gridService: GridService;
 
-    start() {
+    protected onEnable(): void {
         this.createGridService();
+    }
+
+    start() {
+    }
+
+    createGrid() {
         this.init(4, 6);
     }
 
@@ -31,7 +37,13 @@ export class GridControllerComponent extends Component {
 
     init(width: number, height: number) {
         this._gridService.init(width, height);
-        this.createBackground();
+        this.updateBackground();
+    }
+
+    clearGrid() {
+        for (const key of this._viewMap.keys()) {
+            this._viewMap.get(key).destroy();
+        }
     }
 
     onTileCreated(tile: TileModel) {
@@ -71,7 +83,7 @@ export class GridControllerComponent extends Component {
         this._viewMap.delete(tile);
     }
 
-    createBackground() {
+    updateBackground() {
         let viewComponent = this.background.getComponent(GridViewComponent);
         viewComponent.init(this._gridService.grid);
     }

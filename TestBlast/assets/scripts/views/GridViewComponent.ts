@@ -5,22 +5,22 @@ const { ccclass, property } = _decorator;
 
 @ccclass('GridViewComponent')
 export class GridViewComponent extends BaseViewComponent<GridModel> {
-    tileSize: number = 100;
+    private _tileSize: number = 100;
 
     start() {
 
     }
 
     dirty() {
-        const xPos = -this.model.width * this.tileSize / 2;
-        const yPos = -this.model.height * this.tileSize / 2;
+        const xPos = -this.model.width * this._tileSize / 2;
+        const yPos = -this.model.height * this._tileSize / 2;
 
         this.node.position.set(xPos, yPos);
 
         let uiTransform = this.getComponent(UITransform);
 
-        const width = this.model.width * this.tileSize + this.tileSize;
-        const height = this.model.height * this.tileSize + this.tileSize;
+        const width = this.model.width * this._tileSize + this._tileSize;
+        const height = this.model.height * this._tileSize + this._tileSize;
         uiTransform.contentSize.set(width, height);
 
         const anchorPointX = 1 / ((this.model.width + 1) * 2);
