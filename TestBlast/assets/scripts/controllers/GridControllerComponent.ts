@@ -1,12 +1,14 @@
-import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
+import { _decorator, Component, instantiate, Node, Prefab, EventTarget } from 'cc';
 import { TileViewComponent } from '../views/TileViewComponent';
 import { TileModel } from '../models/TileModel';
 import { GridViewComponent } from '../views/GridViewComponent';
-import { GridService } from './GridService';
+import { GridService } from '../services/GridService';
 const { ccclass, property } = _decorator;
 
 @ccclass('GridControllerComponent')
 export class GridControllerComponent extends Component {
+    eventTarget: EventTarget = new EventTarget();
+
     @property({type: Node})
     background: Node;
 
@@ -17,25 +19,17 @@ export class GridControllerComponent extends Component {
 
     _gridService: GridService;
 
-    protected onEnable(): void {
-        this.createGridService();
-    }
-
-    start() {
-    }
-
-    createGrid() {
-        this.init(4, 6);
-    }
-
-    createGridService() {
-        this._gridService = new GridService();
+    init(gridService: GridService) {
+        this._gridService = gridService;
         this._gridService.eventTarget.on('TileCreated', this.onTileCreated, this);
         this._gridService.eventTarget.on('TileUpdated', this.onTileUpdated, this);
         this._gridService.eventTarget.on('TileRemoved', this.onTileRemoved, this);
     }
 
-    init(width: number, height: number) {
+    start() {
+    }
+
+    createGrid(width: number, height: number) {
         this._gridService.init(width, height);
         this.updateBackground();
     }
@@ -60,6 +54,7 @@ export class GridControllerComponent extends Component {
 
     onTileClicked(model: TileModel) {
         this._gridService.handleClick(model);
+        this.eventTarget.emit('endOfTurn');
     }
 
     onTileUpdated(tile: TileModel) {
